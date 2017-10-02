@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Rules
+{% endblock %}
+
+{% block main %}
+    
+    <div>
+        </br>
+        <h4 style="color:grey">
+            How to play Five Letter Word Game:
+        </h4>
+        <p>
+            1. The object of the game is to guess the mystery word in as few guesses as possible. This word is randomly picked by the computer.
+        </p>
+        <p>
+            2. Guess this word by guessing other 5 letter words. You will be told the number of letters in common between your guess and the mystery word.
+            </br>
+            (Note: If there are two of one letter in your guess, that would be equivalent to a score of one - i.e. trees returns 1 if only e is in the mystery word)
+        </p>
+        <p>
+            3. Continue to guess, determining which letters are in the word and which aren't.
+        </p>
+        <p>
+            4. Once you guess the hidden word head over to the highscores table to see where you stand.
+        </p>
+        
+        </br>
+        </br>
+        
+        <h4 style="color:grey">
+            Useful Hints:
+        </h4>
+        <p>
+            The mystery word will contain five unique letters (no duplicates)
+        </p>
+        <p>
+            Use the text box to keep track of which letters are in/not in the word.
+        </p>
+        <p>
+            Sometimes zero letters in common is good! This allows you to narrow down the list of possible letters.
+        </p>
+        <p>
+            Try guessing words with repeated letters - it gives the same benefit as using letters you know aren't in the word.
+        </p>
+        <p>
+            Try deleting letters from the alphabet (i.e. the text box) that you know aren't in the word.
+        </p>
+    </div>
+    
+{% endblock %}

@@ -1,0 +1,6 @@
+reset text box
+highscore input name
+    get rid of users
+lock game after win
+    to prevent duplicate highscores
+make sure new game on registration

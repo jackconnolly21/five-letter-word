@@ -1,0 +1,29 @@
+    This project is very similar in design to Finance and Mashup, so 
+the method for running it is very similar. No APIs were used, so no API-KEYs 
+are necessary. To start, run 
+
+    pip install --user -r requirements.txt
+    
+to install Flask, Flask-Session, passlib, and SQLAlchemy from requirements.txt.
+There are four tables in the SQLite database "project.db" - users, games, guesses
+and highscores. Their four create queries are:
+
+    users: CREATE TABLE 'users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'username' TEXT, 'hash' TEXT)
+    games: CREATE TABLE 'games' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'mystery' TEXT, 'user_id' INTEGER)
+    guesses: CREATE TABLE 'guesses' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'guess' TEXT, 'score' INTEGER, 'game_id' INTEGER, 'user_id' INTEGER)
+    highscores: CREATE TABLE 'highscores' ('user_id' INTEGER, 'game_id' INTEGER, 'score' INTEGER, 'date' DATETIME DEFAULT CURRENT_TIMESTAMP)
+
+so use these to configure an identical database if needed. To run the application,
+use flask run in a terminal window and open CS50 IDE web server. 
+    To actually play the game, first register with an account and you will be
+redirected to the main page, where the game lives. For rules of the game, check
+out the rules tab in the navbar ("/rules"), but basically the objective is to
+guess the hidden mystery word in the fewest number of guesses possible. To guess
+a word, input a valid English 5 letter word into the "Guess" box on the main page,
+and you will be told the number of letters your guess shares with the mystery word.
+Once you win by guessing the hidden word, you can look at the highscores page to see
+how to compare to others (basically me). 
+    Once to you win, or if you just don't feel like finishing the current game, just
+click the "New Game" tab next to "Rules". You can also change your password and logout.
+If you need to get back to the main page from any other route just click the "FIVE 
+Letters" logo to return to the game. 

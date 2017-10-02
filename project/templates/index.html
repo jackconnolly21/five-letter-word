@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Index
+{% endblock %}
+
+{% block main %}
+
+    <!-- app's own JavaScript -->
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <form data-toggle="validator" id="guess">
+                <fieldset>
+                    <div class="form-group">
+                        <label class="control-label" for="word">Guess:</label>
+                        <input autocomplete="off" autofocus class="form-control" id="word" placeholder="Guess" type="text">
+                        <button type="submit" class="btn btn-default" id="submitGuess">Guess</button>
+                        <div class="help-block">Provide a valid 5 letter word</div>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    
+    
+    <div class="row">
+        <div class="col-lg-8">
+        <table class='table table-striped' width="50%">
+            <thead>
+                <tr>
+                    <th>Attempts</th>
+                    <th>Guess</th>
+                    <th>Letters in Common</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+        </div>
+        <div class="col-lg-4">
+            <label for="notes1">Keep Some Notes Here:</label>
+            <textarea rows="5" cols="50" id="notes1" placeholder = "&#13;&#10;&#9;&#9;&#9;Use these areas to keep track of letters" class="form-control">
+
+            </textarea>
+            </br></br>
+            <textarea rows="5" cols="50" id="notes2" class="form-control">
+                
+            </textarea>
+            </br><label for="notes3">Alphabet:</label></br>
+            <textarea rows="5" cols="20" id="notes3" class="form-control">
+        A B C D E F G H
+        I J K L M N O P
+        Q R S T U V W X
+                    Y Z
+            </textarea>
+        </div>
+    </div>
+    
+    <!--Maybe add in buttons that change color (class) when clicked-->
+    <!--<div>-->
+    <!--    <button class="btn btn-default">A</button>-->
+    <!--</div>-->
+    
+    
+    <div class="container">
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                      <h4 class="modal-title" id="modal_title"></h4>
+                    </div>
+                    <div class="modal-body" id="modalbody">
+                        <p id="modal_text"></p>
+                    </div>
+                    <div class="modal-footer">
+                      <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

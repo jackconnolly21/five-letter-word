@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Highscores
+{% endblock %}
+
+{% block main %}
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Mystery Word</th>
+                <th>Score</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td><b>{{ row.username }}</b></td>
+                <td>{{ row.mystery }}</td>
+                <td>{{ row.score }}</td>
+                <td>{{ row.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

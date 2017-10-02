@@ -1,0 +1,35 @@
+    Overall, Five Letter Word Game was designed to run mainly on
+one page, relying on JavaScript to dynamically update it. It is 
+based on the framework of Finance, with some JavaScript added in.
+I decided to have users log in and create accounts so that I was 
+able to save their games even if they left or closed their browser.
+I kept the login, logout, register, and password routes from my 
+Finance application then created new routes as needed. 
+    I have used 4 different SQL tables to keep track of data, in
+order to minimize redundancy as much as possible. The users table
+is identical to finance, storing a unique id, a username, and a 
+hash of the password. The games table contains an id, mystery word,
+and user_id of the user playing that game. The guesses table has
+an id, word that was guessed, a score (letters in common), and
+the game_id associated with the guess. Finally the highscores table
+has a user_id, game_id, score, and timestamp. Ultimately these come
+together to eliminate redundancy, as the mystery word, username, and
+guess are all only stored in one place, yet still accessible through
+game_id and user_id. 
+    The reason I chose to implement the game mostly in JavaScript is
+the fact that I need to constantly update the data shown on the page,
+but I didn't want it to be constantly refreshing or sending the user
+around to different routes, especially when some form validation 
+failed. Using JS allowed me to build upon many other coder's work, 
+often with Bootstrap to accomplish tasks easier. It also allowed me
+to cut down on requests to the server, just calling every time a guess 
+is made (to validate and then for the new table).
+    The two major functions in game.js are guess and table. Guess() 
+ultimately tells the user how many letters are in common between 
+their guess and the mystery word and also records the guess in SQL.
+Table() builds a string of HTML to be inserted into the tbody element,
+filling the table. Overall, I tried to keep this project as similar in
+spirit to how the game is actually played in real life on a whiteboard,
+which is why I included the open textarea and a list of guesses. If I 
+had more time/another person to help I would love to implement more
+features like a way to play versus the computer as well as multiplayer.
