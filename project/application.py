@@ -2,7 +2,7 @@ from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_session import Session
 from flask_jsglue import JSGlue
-from passlib.apps import custom_app_context as pwd_context
+from werkzeug.security import check_password_hash, generate_password_hash
 from tempfile import gettempdir
 from datetime import datetime
 
@@ -141,29 +141,25 @@ def register():
     session.clear()
 
     if request.method == "POST":
-
         # check that username was provided
         if not request.form.get("username"):
-            return apology("must provide username")
+            return apology("must provide username", 403)
         # check that password was provided twice
         elif not request.form.get("password") or not request.form.get("confirmation"):
-            return apology("must provide password twice")
+            return apology("must provide password twice", 403)
         # check that both passwords match
         elif not request.form.get("password") == request.form.get("confirmation"):
-            return apology("passwords must match")
+            return apology("passwords must match", 403)
 
-        # query database to check if username is taken
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                           username=request.form.get("username"))
-        if len(rows) != 0:
-            return apology("username already taken :(")
-        # if not, add user to users table, hash password
-        db.execute("INSERT INTO users (username, hash) VALUES(:username, :hashh)",
-                    username=request.form["username"],
-                    hashh=pwd_context.encrypt(request.form["password"]))
+        # Add user to database
+        id = db.execute("INSERT INTO users (username, hash) VALUES(:username, :hash)",
+                        username=request.form.get("username"),
+                        hash=generate_password_hash(request.form.get("password")))
+        if not id:
+            return apology("username taken")
 
-        session["user_id"] = (db.execute("SELECT id FROM users where username = :username",
-                              username=request.form["username"]))[0]["id"]
+        session["user_id"] = id
+
         # start a new game for the user when registered
         session["game_id"] = new_game()
 
@@ -196,18 +192,20 @@ def login():
 
         # ensure username was submitted
         if not request.form.get("username"):
-            return apology("must provide username")
+            return apology("must provide username", 403)
 
         # ensure password was submitted
         elif not request.form.get("password"):
-            return apology("must provide password")
+            return apology("must provide password", 403)
 
-        # query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username"))
+        print request.form.get("username")
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          username=request.form.get("username"))
 
         # ensure username exists and password is correct
-        if len(rows) != 1 or not pwd_context.verify(request.form.get("password"), rows[0]["hash"]):
-            return apology("invalid username and/or password")
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return apology("invalid username and/or password", 403)
 
         # remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -243,7 +241,7 @@ def password():
 
         # update hash in database
         db.execute("UPDATE users SET hash = :hashh WHERE id = :idd",
-                    hashh=pwd_context.encrypt(request.form.get("new")),
+                    hashh=generate_password_hash(request.form.get("new")),
                     idd=session["user_id"])
 
         # redirect to portfolio
@@ -252,3 +250,11 @@ def password():
 
     else:
         return render_template("password.html")
+
+def errorhandler(e):
+    """Handle error"""
+    return apology(e.name, e.code)
+
+# listen for errors
+for code in default_exceptions:
+    app.errorhandler(code)(errorhandler)
