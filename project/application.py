@@ -1,10 +1,13 @@
-from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_session import Session
 from flask_jsglue import JSGlue
 from werkzeug.security import check_password_hash, generate_password_hash
 from tempfile import gettempdir
 from datetime import datetime
+import sqlalchemy
+import tables
+from sqlalchemy import and_
+from sqlalchemy import text, select
 
 from helpers import *
 from validator import *
@@ -29,7 +32,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # configure CS50 Library to use SQLite database
-db = SQL("sqlite:///project.db")
+engine = sqlalchemy.create_engine("sqlite:///project.db")
 
 # instantiate an instance of the Validator class to check guesses
 validator = Validator()
@@ -56,7 +59,8 @@ def guess():
     game_id = session["game_id"]
 
     # get the mystery word from the SQL games table
-    mystery = db.execute("SELECT mystery FROM games WHERE id = :game_id", game_id=game_id)
+    stmt = text("SELECT mystery FROM games WHERE id = %d" % (game_id))
+    mystery = engine.execute(stmt).fetchall()
     # check to make sure a valid game_id was provided
     if len(mystery) == 0:
         raise RuntimeError("game does not exist")
@@ -73,21 +77,17 @@ def guess():
     score = common_letters(guess, mystery)
 
     # record this guess in the SQL table guesses
-    db.execute("""INSERT INTO guesses (guess, score, game_id)
-                  VALUES (:guess, :score, :game_id)""",
-                  guess=guess, score=score,
-                  game_id=game_id)
+    __insert(engine, tables.GUESSES, {'guess': guess, 'score': score, 'game_id': game_id})
 
     # check if winner
     # if so, find the total_guesses it took and insert into highscores table
     if guess == mystery:
-            total_guesses = db.execute("SELECT COUNT (*) FROM guesses WHERE game_id = :game_id", game_id=game_id)[0]["COUNT (*)"]
-            db.execute("""INSERT INTO highscores (user_id, score, game_id)
-                          VALUES (:user_id, :score, :game_id)""",
-                          user_id=session["user_id"], score=total_guesses,
-                          game_id=game_id)
-            # send the JavaScript a score of 6 to indicate winning
-            score = 6
+        stmt = text("SELECT COUNT (*) FROM guesses WHERE game_id = %d" % (game_id))
+        total_guesses = engine.execute(stmt).fetchone()["COUNT (*)"]
+        # stmt = text("INSERT INTO highscores (user_id, score, game_id) VALUES (%d, %d, %d)" % (session["user_id"], total_guesses, game_id))
+        __insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
+        # send the JavaScript a score of 6 to indicate winning
+        score = 6
 
     return jsonify({"score": score})
 
@@ -97,7 +97,8 @@ def table():
     """Return all guesses for current game"""
 
     # select all guess belonging to current game_id
-    guesses = db.execute("SELECT * FROM guesses WHERE game_id = :game_id ORDER BY id", game_id=session["game_id"])
+    stmt = text("SELECT * FROM guesses WHERE game_id = %d ORDER BY id" % (session["game_id"]))
+    guesses = engine.execute(stmt).fetchall()
 
     return jsonify(guesses)
 
@@ -107,11 +108,12 @@ def highscore():
     """Create and print the highscores table"""
 
     # JOIN 3 SQL tables to get desired data
-    rows = db.execute("""SELECT U.username, G.mystery, H.score, H.date
+    stmt = text("""SELECT U.username, G.mystery, H.score, H.date
                         FROM [highscores] H
                         JOIN users U ON H.user_id = U.id
                         JOIN games G ON H.game_id = G.id
                         ORDER BY H.score""")
+    rows = engine.execute(stmt).fetchall()
 
     return render_template("highscore.html", rows=rows)
 
@@ -152,9 +154,7 @@ def register():
             return apology("passwords must match", 403)
 
         # Add user to database
-        id = db.execute("INSERT INTO users (username, hash) VALUES(:username, :hash)",
-                        username=request.form.get("username"),
-                        hash=generate_password_hash(request.form.get("password")))
+        id = __insert(engine, tables.USERS, {'username': request.form.get("username"), 'hash': generate_password_hash(request.form.get("password"))})
         if not id:
             return apology("username taken")
 
@@ -200,8 +200,8 @@ def login():
 
         print request.form.get("username")
         # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        stmt = text("SELECT * FROM users WHERE username = %s" % (request.form.get("username")))
+        rows = engine.execute(stmt).fetchall()
 
         # ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -228,11 +228,11 @@ def password():
     if request.method == "POST":
 
         # query for user's hash of password
-        rows = db.execute("SELECT hash FROM users WHERE id = :idd",
-                           idd=session["user_id"])
+        stmt = text("SELECT hash FROM users WHERE id = %d" % (session["user_id"]))
+        rows = engine.execute(stmt).fetchone()
 
         # check all boxes filled, old password is correct, new and confirmation match
-        if not request.form.get("old") or not pwd_context.verify(request.form.get("old"), rows[0]["hash"]):
+        if not request.form.get("old") or not pwd_context.verify(request.form.get("old"), rows["hash"]):
             return apology("incorrect password")
         elif not request.form.get("new") or not request.form.get("confirmation"):
             return apology("must type new password twice")
@@ -240,9 +240,8 @@ def password():
             return apology("new passwords must match")
 
         # update hash in database
-        db.execute("UPDATE users SET hash = :hashh WHERE id = :idd",
-                    hashh=generate_password_hash(request.form.get("new")),
-                    idd=session["user_id"])
+        stmt = text("UPDATE users SET hash = %s WHERE id = %d" % (generate_password_hash(request.form.get("new")), session["user_id"]))
+        engine.execute(stmt)
 
         # redirect to portfolio
         flash("Password changed!")
@@ -254,6 +253,9 @@ def password():
 def errorhandler(e):
     """Handle error"""
     return apology(e.name, e.code)
+
+def __insert(db_engine, table, row_dict):
+    return db_engine.execute(table.insert(), **row_dict).fetchone().id
 
 if __name__ == "__main__":
     app.run()
