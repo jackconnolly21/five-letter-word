@@ -1,4 +1,4 @@
-from flask import Flask, flash, redirect, render_template, request, session, url_for, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from flask_jsglue import JSGlue
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -6,8 +6,8 @@ from tempfile import gettempdir
 from datetime import datetime
 import sqlalchemy
 import tables
-from sqlalchemy import and_
-from sqlalchemy import text, select
+import json
+from sqlalchemy import and_, text, select
 
 from helpers import *
 from validator import *
@@ -31,7 +31,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# configure CS50 Library to use SQLite database
+# configure sqlalchemy Library to use SQLite database
 engine = sqlalchemy.create_engine("sqlite:///project.db")
 
 # instantiate an instance of the Validator class to check guesses
@@ -40,7 +40,7 @@ validator = Validator()
 @app.route("/")
 @login_required
 def index():
-
+    print "Loading Home"
     # just return index.html, the rest is done in JavaScript
     # this is where the main game is run (via games.js)
     return render_template("index.html")
@@ -49,6 +49,7 @@ def index():
 @login_required
 def guess():
 
+    print "Submitting Guess"
     # check to make sure necessary parameters are passed in
     if not request.args.get("guess"):
         raise RuntimeError("missing guess")
@@ -71,13 +72,15 @@ def guess():
     # use the validator instance to check whether the guess is in the dictionary
     if not validator.validate(guess):
         # score of -1 indicates an invalid word for the JavaScript
-        return jsonify({"score": -1})
+        return json.dumps({"score": -1})
 
     # helper function to find number of letters in common
     score = common_letters(guess, mystery)
 
     # record this guess in the SQL table guesses
-    __insert(engine, tables.GUESSES, {'guess': guess, 'score': score, 'game_id': game_id})
+    sql_insert(engine, tables.GUESSES, {'guess': guess, 'score': score, 'game_id': game_id})
+    print "Guess: %s" % (guess)
+    print "Score: %d" % (score)
 
     # check if winner
     # if so, find the total_guesses it took and insert into highscores table
@@ -85,28 +88,29 @@ def guess():
         stmt = text("SELECT COUNT (*) FROM guesses WHERE game_id = %d" % (game_id))
         total_guesses = engine.execute(stmt).fetchone()["COUNT (*)"]
         # stmt = text("INSERT INTO highscores (user_id, score, game_id) VALUES (%d, %d, %d)" % (session["user_id"], total_guesses, game_id))
-        __insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
+        sql_insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
         # send the JavaScript a score of 6 to indicate winning
         score = 6
+        print "Ending Game...Winner!"
 
-    return jsonify({"score": score})
+    return json.dumps({"score": score})
 
 @app.route("/table")
 @login_required
 def table():
     """Return all guesses for current game"""
-
+    print "Loading Table"
     # select all guess belonging to current game_id
     stmt = text("SELECT * FROM guesses WHERE game_id = %d ORDER BY id" % (session["game_id"]))
-    guesses = engine.execute(stmt).fetchall()
+    guesses = [dict(g) for g in engine.execute(stmt).fetchall()]
 
-    return jsonify(guesses)
+    return json.dumps(guesses)
 
 @app.route("/highscore")
 @login_required
 def highscore():
     """Create and print the highscores table"""
-
+    print "Loading Highscores"
     # JOIN 3 SQL tables to get desired data
     stmt = text("""SELECT U.username, G.mystery, H.score, H.date
                         FROM [highscores] H
@@ -125,15 +129,15 @@ def game_id():
     # use new_game method to start a new game
     # update the session variable "game_id"
     session["game_id"] = new_game()
-
+    print "Creating new game with game_id=", session['game_id']
     # return the game_id to the browser
-    return jsonify({"id": session["game_id"]})
+    return json.dumps({"id": session["game_id"]})
 
 @app.route("/rules")
 @login_required
 def rules():
     """Create the Rules Page"""
-
+    print "Loading Rules"
     return render_template("rules.html")
 
 @app.route("/register", methods=["GET", "POST"])
@@ -141,6 +145,7 @@ def register():
     """Register User"""
 
     session.clear()
+    print "Registering New User..."
 
     if request.method == "POST":
         # check that username was provided
@@ -154,7 +159,7 @@ def register():
             return apology("passwords must match", 403)
 
         # Add user to database
-        id = __insert(engine, tables.USERS, {'username': request.form.get("username"), 'hash': generate_password_hash(request.form.get("password"))})
+        id = sql_insert(engine, tables.USERS, {'username': request.form.get("username"), 'hash': generate_password_hash(request.form.get("password"))})
         if not id:
             return apology("username taken")
 
@@ -163,6 +168,8 @@ def register():
         # start a new game for the user when registered
         session["game_id"] = new_game()
 
+        print "Registered user %s" % (request.form.get('username'))
+        print "Created new game %d" % (session['game_id'])
         # redirect to portfolio
         flash("You are registered!")
         return redirect(url_for("index"))
@@ -173,7 +180,7 @@ def register():
 @app.route("/logout")
 def logout():
     """Log user out."""
-
+    print "User logged out"
     # forget any user_id
     session.clear()
 
@@ -200,7 +207,7 @@ def login():
 
         print request.form.get("username")
         # Query database for username
-        stmt = text("SELECT * FROM users WHERE username = %s" % (request.form.get("username")))
+        stmt = text("SELECT * FROM users WHERE username = '%s'" % (request.form.get("username")))
         rows = engine.execute(stmt).fetchall()
 
         # ensure username exists and password is correct
@@ -213,6 +220,7 @@ def login():
         # start a new game
         session["game_id"] = new_game()
 
+        print "Logged in user %s" % (request.form.get('username'))
         # redirect user to game
         return redirect(url_for("index"))
 
@@ -226,13 +234,13 @@ def password():
     """Allow user to change password"""
 
     if request.method == "POST":
-
+        print "Changing password"
         # query for user's hash of password
         stmt = text("SELECT hash FROM users WHERE id = %d" % (session["user_id"]))
         rows = engine.execute(stmt).fetchone()
 
         # check all boxes filled, old password is correct, new and confirmation match
-        if not request.form.get("old") or not pwd_context.verify(request.form.get("old"), rows["hash"]):
+        if not request.form.get("old") or not check_password_hash(request.form.get("old"), rows["hash"]):
             return apology("incorrect password")
         elif not request.form.get("new") or not request.form.get("confirmation"):
             return apology("must type new password twice")
@@ -245,6 +253,7 @@ def password():
 
         # redirect to portfolio
         flash("Password changed!")
+        print "Password changed!"
         return redirect(url_for("index"))
 
     else:
@@ -253,9 +262,6 @@ def password():
 def errorhandler(e):
     """Handle error"""
     return apology(e.name, e.code)
-
-def __insert(db_engine, table, row_dict):
-    return db_engine.execute(table.insert(), **row_dict).fetchone().id
 
 if __name__ == "__main__":
     app.run()

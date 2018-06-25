@@ -1,13 +1,15 @@
 import csv
 from datetime import datetime
-from cs50 import SQL
+from sqlalchemy import and_, text, select
+import sqlalchemy
+import tables
 
 from flask import redirect, render_template, request, session, url_for
 from functools import wraps
 from validator import *
 
-# configure CS50 Library to use SQLite database
-db = SQL("sqlite:///project.db")
+# configure sqlalchemy Library to use SQLite database
+engine = sqlalchemy.create_engine("sqlite:///project.db")
 
 # instantiate validator object with the dictionary of possible mystery words
 validator = Validator("dicts/mystery.txt")
@@ -65,4 +67,7 @@ def new_game():
 
     # record this new game in the SQL table "games"
     # return the id of the last inserted row (in order to set the session variable in application)
-    return db.execute("INSERT INTO games (mystery, user_id) VALUES (:mystery, :user_id)", mystery=mystery, user_id=session["user_id"])
+    return sql_insert(engine, tables.GAMES, {'mystery': mystery, 'user_id': session['user_id']})
+
+def sql_insert(db_engine, table, row_dict):
+    return db_engine.execute(table.insert(), **row_dict).lastrowid
