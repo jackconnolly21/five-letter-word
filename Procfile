@@ -1,1 +1,1 @@
-web: cd main/app/ && gunicorn wsgi_prod:app
+web: cd project/ && gunicorn wsgi_prod:app
