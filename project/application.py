@@ -32,7 +32,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # configure sqlalchemy Library to use SQLite database
-engine = sqlalchemy.create_engine("sqlite:///project.db")
+engine = get_db_engine(mode='prod')
 
 # instantiate an instance of the Validator class to check guesses
 validator = Validator()
