@@ -1,12 +1,12 @@
 import csv
 from datetime import datetime
-from sqlalchemy import and_, text, select
-import sqlalchemy
-import tables
 
 from flask import redirect, render_template, request, session, url_for
 from functools import wraps
 from validator import *
+
+from tables import GAMES
+import datastore
 
 # instantiate validator object with the dictionary of possible mystery words
 validator = Validator("dicts/mystery.txt")
@@ -56,16 +56,6 @@ def common_letters(word, mystery):
     # the length of this set is how many letters the words have in common
     return len(w & m)
 
-def get_db_url_prod():
-    return 'postgres://xosqkcwzlfunsx:598e2304c4d4dc3ce66a777a6baa6d6af9eb563cb92e928752aeb5f099a1d7b2@ec2-54-243-212-227.compute-1.amazonaws.com:5432/d7ei7va6mpl1id'
-
-def get_db_engine(mode='prod'):
-    if mode == 'prod':
-        db_url = get_db_url_prod()
-    else:
-        db_url = 'sqlite:///project.db'
-    return sqlalchemy.create_engine(db_url)
-
 def new_game(db_engine):
     """Starts a new game for the user"""
 
@@ -74,7 +64,4 @@ def new_game(db_engine):
 
     # record this new game in the SQL table "games"
     # return the id of the last inserted row (in order to set the session variable in application)
-    return sql_insert(db_engine, tables.GAMES, {'mystery': mystery, 'user_id': session['user_id']})
-
-def sql_insert(db_engine, table, row_dict):
-    return db_engine.execute(table.insert(), **row_dict).lastrowid
+    return datastore.__insert(db_engine, GAMES, {'mystery': mystery, 'user_id': session.get("user_id")})

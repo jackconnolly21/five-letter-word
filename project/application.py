@@ -11,6 +11,7 @@ from sqlalchemy import and_, text, select
 
 from helpers import *
 from validator import *
+import datastore
 
 # configure application
 app = Flask(__name__)
@@ -32,7 +33,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # configure sqlalchemy Library to use SQLite database
-engine = get_db_engine(mode='prod')
+engine = datastore.get_db_engine(mode='prod')
 
 # instantiate an instance of the Validator class to check guesses
 validator = Validator()
@@ -58,6 +59,7 @@ def guess():
     # make guess lowercase in order to check against dictionary
     guess = request.args.get("guess").lower()
     game_id = session["game_id"]
+    print("Guess, game_id = %i" % game_id)
 
     # get the mystery word from the SQL games table
     stmt = text("SELECT mystery FROM games WHERE id = %d" % (game_id))
@@ -78,7 +80,7 @@ def guess():
     score = common_letters(guess, mystery)
 
     # record this guess in the SQL table guesses
-    sql_insert(engine, tables.GUESSES, {'guess': guess, 'score': score, 'game_id': game_id})
+    datastore.__insert(engine, tables.GUESSES, {'guess': guess, 'score': score, 'game_id': game_id})
     print "Guess: %s" % (guess)
     print "Score: %d" % (score)
 
@@ -88,7 +90,7 @@ def guess():
         stmt = text("SELECT COUNT (*) FROM guesses WHERE game_id = %d" % (game_id))
         total_guesses = engine.execute(stmt).fetchone()["COUNT (*)"]
         # stmt = text("INSERT INTO highscores (user_id, score, game_id) VALUES (%d, %d, %d)" % (session["user_id"], total_guesses, game_id))
-        sql_insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
+        datastore.__insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
         # send the JavaScript a score of 6 to indicate winning
         score = 6
         print "Ending Game...Winner!"
@@ -113,7 +115,7 @@ def highscore():
     print "Loading Highscores"
     # JOIN 3 SQL tables to get desired data
     stmt = text("""SELECT U.username, G.mystery, H.score, H.date
-                        FROM [highscores] H
+                        FROM highscores H
                         JOIN users U ON H.user_id = U.id
                         JOIN games G ON H.game_id = G.id
                         ORDER BY H.score""")
@@ -159,7 +161,8 @@ def register():
             return apology("passwords must match", 403)
 
         # Add user to database
-        id = sql_insert(engine, tables.USERS, {'username': request.form.get("username"), 'hash': generate_password_hash(request.form.get("password"))})
+        id = datastore.__insert(engine, tables.USERS, {'username': request.form.get("username"), 'hash': generate_password_hash(request.form.get("password"))})
+        print(id)
         if not id:
             return apology("username taken")
 
