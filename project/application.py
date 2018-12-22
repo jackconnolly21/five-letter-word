@@ -128,7 +128,7 @@ def game_id():
 
     # use new_game method to start a new game
     # update the session variable "game_id"
-    session["game_id"] = new_game()
+    session["game_id"] = new_game(engine)
     print "Creating new game with game_id=", session['game_id']
     # return the game_id to the browser
     return json.dumps({"id": session["game_id"]})
@@ -166,7 +166,7 @@ def register():
         session["user_id"] = id
 
         # start a new game for the user when registered
-        session["game_id"] = new_game()
+        session["game_id"] = new_game(engine)
 
         print "Registered user %s" % (request.form.get('username'))
         print "Created new game %d" % (session['game_id'])
@@ -218,7 +218,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # start a new game
-        session["game_id"] = new_game()
+        session["game_id"] = new_game(engine)
 
         print "Logged in user %s" % (request.form.get('username'))
         # redirect user to game
