@@ -219,6 +219,7 @@ def login():
 
         # start a new game
         session["game_id"] = new_game(engine)
+        print "Created new game with id=%i" % session['game_id']
 
         print "Logged in user %s" % (request.form.get('username'))
         # redirect user to game
