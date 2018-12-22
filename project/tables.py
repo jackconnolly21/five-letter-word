@@ -27,6 +27,7 @@ GUESSES = sql.Table('guesses', metadata,
                   )
 
 HIGHSCORES = sql.Table('highscores', metadata,
+                sql.Column('id', sql.Integer, primary_key=True),
                 sql.Column('user_id', sql.Integer, ForeignKey(USERS.c.id), nullable=False),
                 sql.Column('game_id', sql.Integer, ForeignKey(GAMES.c.id), nullable=False),
                 sql.Column('score', sql.Integer, nullable=False),

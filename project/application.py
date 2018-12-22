@@ -87,8 +87,7 @@ def guess():
     # check if winner
     # if so, find the total_guesses it took and insert into highscores table
     if guess == mystery:
-        stmt = text("SELECT COUNT (*) FROM guesses WHERE game_id = %d" % (game_id))
-        total_guesses = engine.execute(stmt).fetchone()["COUNT (*)"]
+        total_guesses = datastore.get_number_guesses(engine, game_id)
         # stmt = text("INSERT INTO highscores (user_id, score, game_id) VALUES (%d, %d, %d)" % (session["user_id"], total_guesses, game_id))
         datastore.__insert(engine, tables.HIGHSCORES, {'user_id': session['user_id'], 'score': total_guesses, 'game_id': game_id})
         # send the JavaScript a score of 6 to indicate winning
