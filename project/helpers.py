@@ -9,7 +9,7 @@ from functools import wraps
 from validator import *
 
 # configure sqlalchemy Library to use SQLite database
-engine = sqlalchemy.create_engine("sqlite:///project.db")
+engine = get_db_engine(mode='prod')
 
 # instantiate validator object with the dictionary of possible mystery words
 validator = Validator("dicts/mystery.txt")
