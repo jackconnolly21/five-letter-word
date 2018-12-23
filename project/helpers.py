@@ -58,10 +58,12 @@ def common_letters(word, mystery):
 
 def new_game(db_engine):
     """Starts a new game for the user"""
-
     # Use the validator class to randomly get a new mystery word
     mystery = validator.get_mystery()
 
     # record this new game in the SQL table "games"
     # return the id of the last inserted row (in order to set the session variable in application)
-    return datastore.__insert(db_engine, GAMES, {'mystery': mystery, 'user_id': session.get("user_id")})
+    game_dict = {'mystery': mystery, 'user_id': session.get("user_id")}
+    new_game_id = datastore.insert_game(db_engine, game_dict)
+    print(new_game_id)
+    return new_game_id

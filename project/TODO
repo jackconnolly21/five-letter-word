@@ -1,0 +1,14 @@
+highscore input name
+    ***get rid of users
+change password not working
+get rid of apology page
+
+Done:
+Heroku page and database
+make sure new game on registration
+duplicate username
+reset text box
+finish changing database stuff to ORM
+highscore sql statement conversion
+prevent duplicate highscores
+new game button not always working
