@@ -3,7 +3,6 @@ from flask_session import Session
 from flask_jsglue import JSGlue
 from werkzeug.security import check_password_hash, generate_password_hash
 from tempfile import gettempdir
-from datetime import datetime
 import sqlalchemy
 import json
 from sqlalchemy import and_, text, select
@@ -24,6 +23,8 @@ if app.config["DEBUG"]:
         response.headers["Expires"] = 0
         response.headers["Pragma"] = "no-cache"
         return response
+
+app.jinja_env.filters["dte"] = convert_time
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = gettempdir()
@@ -85,13 +86,6 @@ def guess():
     # Check if winner
     # If so, find the total_guesses it took and insert into highscores table
     if guess == game_info['mystery']:
-        total_guesses = datastore.get_number_guesses(engine, game_id)
-        highscore_dict = {
-            'user_id': session['user_id'],
-            'score': total_guesses,
-            'game_id': game_id
-        }
-        datastore.insert_highscore(engine, highscore_dict)
         datastore.update_game_finished(engine, game_id)
         # Send the JavaScript a score of 6 to indicate winning
         score = 6
@@ -103,23 +97,39 @@ def guess():
 @login_required
 def table():
     """Return all guesses for current game"""
-    print "Loading table for game_id=%i" % session['game_id']
+    print "Loading table for game_id=%i" % session["game_id"]
 
     # Select all guess belonging to current game_id
-    guesses = datastore.get_guesses_by_game_id(engine, session['game_id'])
+    guesses = datastore.get_guesses_by_game_id(engine, session["game_id"])
     guesses = [dict(g) for g in guesses]
 
     return json.dumps(guesses)
 
-@app.route("/highscore")
+@app.route("/highscore", methods=["GET", "POST"])
 @login_required
 def highscore():
     """Create and print the highscores table"""
-    print "Loading Highscores"
-    # JOIN 3 SQL tables to get desired data
-    rows = datastore.get_all_highscores(engine)
+    if request.method == "POST":
+        if not request.form.get('hs_name'):
+            name = "Guest"
+        else:
+            name = request.form.get('hs_name')
 
-    return render_template("highscore.html", rows=rows)
+        total_guesses = datastore.get_number_guesses(engine, session["game_id"])
+        highscore_dict = {
+            'name': name,
+            'score': total_guesses,
+            'game_id': session['game_id']
+        }
+        datastore.insert_highscore(engine, highscore_dict)
+
+        return redirect(url_for('highscore'))
+    else:
+        print "Loading Highscores"
+
+        rows = datastore.get_all_highscores(engine)
+
+        return render_template("highscore.html", rows=rows)
 
 @app.route("/game_id")
 @login_required
@@ -150,13 +160,16 @@ def register():
     if request.method == "POST":
         # Check that username was provided
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            flash('Must type username!', 'danger')
+            return render_template('register.html')
         # Check that password was provided twice
         elif not request.form.get("password") or not request.form.get("confirmation"):
-            return apology("must provide password twice", 403)
+            flash('Must type password twice!', 'danger')
+            return render_template('register.html')
         # Check that both passwords match
         elif not request.form.get("password") == request.form.get("confirmation"):
-            return apology("passwords must match", 403)
+            flash('Passwords don\'t match!', 'danger')
+            return render_template('register.html')
 
         # Add user to database
         try:
@@ -165,7 +178,8 @@ def register():
             id_ = datastore.insert_user(engine, user_dict)
         except:
             # Unique constraint will make this fail if username exists
-            return apology("Username %s is taken" % request.form.get('username'))
+            flash('Username %s is taken!' % request.form.get('username'), 'danger')
+            return render_template('register.html')
 
         session["user_id"] = id_
 
@@ -203,17 +217,20 @@ def login():
 
         # Ensure username was submitted
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            flash('Must type username!', 'danger')
+            return render_template('login.html')
         # Ensure password was submitted
         elif not request.form.get("password"):
-            return apology("must provide password", 403)
+            flash('Must type password!', 'danger')
+            return render_template('login.html')
 
         # Query database for username
         rows = datastore.get_user_by_username(engine, request.form.get("username"))
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+            flash('Invalid username/and or password!', 'danger')
+            return render_template('register.html')
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -243,11 +260,14 @@ def password():
         print("old form hash", generate_password_hash(request.form.get('old')))
         # Check all boxes filled, old password is correct, new and confirmation match
         if not request.form.get("old") or not check_password_hash(request.form.get("old"), rows["hash"]):
-            return apology("incorrect password")
+            flash('Incorrect password!', 'danger')
+            return render_template('password.html')
         elif not request.form.get("new") or not request.form.get("confirmation"):
-            return apology("must type new password twice")
+            flash('Must enter both passwords', 'danger')
+            return render_template('password.html')
         elif not request.form.get("new") == request.form.get("confirmation"):
-            return apology("new passwords must match")
+            flash('Passwords don\'t match!', 'danger')
+            return render_template('password.html')
 
         # Update hash in database
         pw_hash = generate_password_hash(request.form.get('new'))
@@ -260,10 +280,6 @@ def password():
 
     else:
         return render_template("password.html")
-
-def errorhandler(e):
-    """Handle error"""
-    return apology(e.name, e.code)
 
 if __name__ == "__main__":
     app.run()

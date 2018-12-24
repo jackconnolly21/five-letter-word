@@ -1,7 +1,7 @@
-highscore input name
-    ***get rid of users
+**get rid of users
 change password not working
-get rid of apology page
+flashed messages not always showing
+buttons for each letter that change color when clicked
 
 Done:
 Heroku page and database
@@ -11,4 +11,7 @@ reset text box
 finish changing database stuff to ORM
 highscore sql statement conversion
 prevent duplicate highscores
-new game button not always working
+format dates in highscores better (just date)
+get rid of apology page
+highscore input name
+new game button not always working (maybe due to incognito)

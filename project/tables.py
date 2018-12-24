@@ -29,7 +29,7 @@ GUESSES = sql.Table('guesses', metadata,
 
 HIGHSCORES = sql.Table('highscores', metadata,
                 sql.Column('id', sql.Integer, primary_key=True),
-                sql.Column('user_id', sql.Integer, ForeignKey(USERS.c.id), nullable=False),
+                sql.Column('name', sql.Text, nullable=False),
                 sql.Column('game_id', sql.Integer, ForeignKey(GAMES.c.id), unique=True, nullable=False),
                 sql.Column('score', sql.Integer, nullable=False),
                 sql.Column('date', sql.DateTime, default=datetime.datetime.utcnow, nullable=False)

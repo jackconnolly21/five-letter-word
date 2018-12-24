@@ -74,9 +74,8 @@ def insert_highscore(db_engine, row_dict):
     return __insert(db_engine, HIGHSCORES, row_dict)
 
 def get_all_highscores(db_engine):
-    j = HIGHSCORES.join(USERS).join(GAMES)
-    stmt = select([USERS.c.username, GAMES.c.mystery, HIGHSCORES.c.score, HIGHSCORES.c.date])
-    stmt = stmt.where(HIGHSCORES.c.user_id == USERS.c.id)
+    j = HIGHSCORES.join(GAMES)
+    stmt = select([HIGHSCORES.c.name, GAMES.c.mystery, HIGHSCORES.c.score, HIGHSCORES.c.date])
     stmt = stmt.where(HIGHSCORES.c.game_id == GAMES.c.id)
     stmt = stmt.order_by(HIGHSCORES.c.score)
     stmt = stmt.select_from(j)

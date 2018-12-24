@@ -8,7 +8,7 @@
 
     <!-- app's own JavaScript -->
     <script src="{{ url_for('static', filename='game.js') }}"></script>
-    
+
     <div class="row">
         <div class="col-lg-8">
             <form data-toggle="validator" id="guess">
@@ -23,8 +23,8 @@
             </form>
         </div>
     </div>
-    
-    
+
+
     <div class="row">
         <div class="col-lg-8">
         <table class='table table-striped' width="50%">
@@ -45,7 +45,7 @@
             </textarea>
             </br></br>
             <textarea rows="5" cols="50" id="notes2" class="form-control">
-                
+
             </textarea>
             </br><label for="notes3">Alphabet:</label></br>
             <textarea rows="5" cols="20" id="notes3" class="form-control">
@@ -56,13 +56,7 @@
             </textarea>
         </div>
     </div>
-    
-    <!--Maybe add in buttons that change color (class) when clicked-->
-    <!--<div>-->
-    <!--    <button class="btn btn-default">A</button>-->
-    <!--</div>-->
-    
-    
+
     <div class="container">
         <!-- Modal -->
         <div class="modal fade" id="myModal" role="dialog">
@@ -83,5 +77,36 @@
             </div>
         </div>
     </div>
-{% endblock %}
 
+    <div class="container">
+        <!-- Modal Form -->
+        <div class="modal fade" id="highscoreForm" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal">&times;</button>
+                      <h4 class="modal-title" id="modal_title_form"></h4>
+                    </div>
+                    <div class="modal-body" id="modalbody_form">
+                        <p id="modal_text_form"></p>
+                    </div>
+                    <div>
+                      <form action="{{ url_for('highscore') }}" data-toggle="validator" id="highscore_name" method="post">
+                          <div class="form-group">
+                              <input class="form-control" name="hs_name" id="hs_name" placeholder="Enter Name" required type="text"/>
+                              <div class="help-block with-errors"></div>
+                          </div>
+                          <div class="form-group">
+                              <button class="btn btn-default" type="submit">Submit Highscore</button>
+                          </div>
+                      </form>
+                    </div>
+                    <div class="modal-footer">
+                      <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

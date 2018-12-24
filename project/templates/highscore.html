@@ -17,10 +17,10 @@
         <tbody>
             {% for row in rows %}
             <tr>
-                <td><b>{{ row.username }}</b></td>
+                <td><b>{{ row.name }}</b></td>
                 <td>{{ row.mystery }}</td>
                 <td>{{ row.score }}</td>
-                <td>{{ row.date }}</td>
+                <td>{{ row.date | dte }}</td>
             </tr>
             {% endfor %}
         </tbody>

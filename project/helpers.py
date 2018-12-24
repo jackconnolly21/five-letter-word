@@ -11,20 +11,6 @@ import datastore
 # instantiate validator object with the dictionary of possible mystery words
 validator = Validator("dicts/mystery.txt")
 
-def apology(message, code=400):
-    """Renders message as an apology to user."""
-    def escape(s):
-        """
-        Escape special characters.
-
-        https://github.com/jacebrowning/memegen#special-characters
-        """
-        for old, new in [("-", "--"), (" ", "-"), ("_", "__"), ("?", "~q"),
-                         ("%", "~p"), ("#", "~h"), ("/", "~s"), ("\"", "''")]:
-            s = s.replace(old, new)
-        return s
-    return render_template("apology.html", top=code, bottom=escape(message)), code
-
 def login_required(f):
     """
     Decorate routes to require login.
@@ -65,5 +51,7 @@ def new_game(db_engine):
     # return the id of the last inserted row (in order to set the session variable in application)
     game_dict = {'mystery': mystery, 'user_id': session.get("user_id")}
     new_game_id = datastore.insert_game(db_engine, game_dict)
-    print(new_game_id)
     return new_game_id
+
+def convert_time(dtetime):
+    return dtetime.strftime('%b. %d, %Y')

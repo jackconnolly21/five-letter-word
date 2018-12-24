@@ -93,7 +93,7 @@ function guess()
         {
             // Disable the input box if the game is won, so no guesses are erroneously put in
             $("#word").prop("disabled", true);
-            modal("Winner!", "You win! The word was " + $("#word").val() + "! Check out the Highscores table!");
+            highscore_modal("Winner!", "You win! The word was " + $("#word").val() + "! Enter your name for the Highscores table!");
             $("#word").val("Click \"New Game\"");
         }
         // All letters are right, but not in correct order
@@ -217,6 +217,15 @@ function modal(title, content)
     $("#modal_text").html(content);
     // Actually show the modal
     $("#myModal").modal();
+}
+
+function highscore_modal(title, content)
+{
+  // Set HTML of myModal in index.html
+  $("#modal_title_form").html(title);
+  $("#modal_text_form").html(content);
+  // Actually show the modal
+  $("#highscoreForm").modal();
 }
 
 /**
