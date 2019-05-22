@@ -49,7 +49,9 @@ def new_game(db_engine):
 
     # record this new game in the SQL table "games"
     # return the id of the last inserted row (in order to set the session variable in application)
-    game_dict = {'mystery': mystery, 'user_id': session.get("user_id")}
+    # game_dict = {'mystery': mystery, 'user_id': session.get("user_id")}
+    # Trying to not use user_id, need to update games table eventually
+    game_dict = {'mystery': mystery}
     new_game_id = datastore.insert_game(db_engine, game_dict)
     return new_game_id
 

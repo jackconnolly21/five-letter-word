@@ -197,6 +197,7 @@ function new_game()
         // Record the game_id returned in localStorage
         // localStorage.game_id = data.id;
         // Do nothing, python should redirect to index
+        table("tbody");
 
     })
     .fail(function(jqXHR, textStatus, errorThrown) {

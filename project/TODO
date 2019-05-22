@@ -1,7 +1,7 @@
-**get rid of users
-change password not working
 flashed messages not always showing
 buttons for each letter that change color when clicked
+** new game button not always working
+
 
 Done:
 Heroku page and database
@@ -14,4 +14,4 @@ prevent duplicate highscores
 format dates in highscores better (just date)
 get rid of apology page
 highscore input name
-new game button not always working (maybe due to incognito)
+get rid of users

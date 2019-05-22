@@ -39,16 +39,18 @@ engine = datastore.get_db_engine(mode='prod')
 validator = Validator()
 
 @app.route("/")
-@login_required
 def index():
     print "Loading Home"
+    if not session.get('game_id'):
+        session["game_id"] = new_game(engine)
+        print "Creating new game with game_id =", session["game_id"]
+
     # Just return index.html, the rest is done in JavaScript (via game.js)
     return render_template("index.html")
 
-@app.route("/guess")
-@login_required
-def guess():
 
+@app.route("/guess")
+def guess():
     print "Submitting Guess"
     # Check to make sure necessary parameters are passed in
     if not request.args.get("guess"):
@@ -93,8 +95,8 @@ def guess():
 
     return json.dumps({"score": score})
 
+
 @app.route("/table")
-@login_required
 def table():
     """Return all guesses for current game"""
     print "Loading table for game_id=%i" % session["game_id"]
@@ -105,8 +107,8 @@ def table():
 
     return json.dumps(guesses)
 
+
 @app.route("/highscore", methods=["GET", "POST"])
-@login_required
 def highscore():
     """Create and print the highscores table"""
     if request.method == "POST":
@@ -131,155 +133,26 @@ def highscore():
 
         return render_template("highscore.html", rows=rows)
 
+
 @app.route("/game_id")
-@login_required
 def game_id():
     """Send the browser current game_id"""
 
     # Use new_game method to start a new game
+    session.clear()
     session["game_id"] = new_game(engine)
-    print "Creating new game with game_id=", session["game_id"]
+    print "Creating new game with game_id =", session["game_id"]
 
     # Redirect to home page
     return redirect(url_for("index"))
 
+
 @app.route("/rules")
-@login_required
 def rules():
     """Create the Rules Page"""
     print "Loading Rules"
     return render_template("rules.html")
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    """Register User"""
-
-    session.clear()
-    print "Registering New User..."
-
-    if request.method == "POST":
-        # Check that username was provided
-        if not request.form.get("username"):
-            flash('Must type username!', 'danger')
-            return render_template('register.html')
-        # Check that password was provided twice
-        elif not request.form.get("password") or not request.form.get("confirmation"):
-            flash('Must type password twice!', 'danger')
-            return render_template('register.html')
-        # Check that both passwords match
-        elif not request.form.get("password") == request.form.get("confirmation"):
-            flash('Passwords don\'t match!', 'danger')
-            return render_template('register.html')
-
-        # Add user to database
-        try:
-            hash_ = generate_password_hash(request.form.get("password"))
-            user_dict = {'username': request.form.get("username"), 'hash': hash_}
-            id_ = datastore.insert_user(engine, user_dict)
-        except:
-            # Unique constraint will make this fail if username exists
-            flash('Username %s is taken!' % request.form.get('username'), 'danger')
-            return render_template('register.html')
-
-        session["user_id"] = id_
-
-        # start a new game for the user when registered
-        session["game_id"] = new_game(engine)
-
-        print "Registered user %s" % (request.form.get('username'))
-        print "Created new game %d" % (session['game_id'])
-        # redirect to portfolio
-        flash("You are registered!")
-        return redirect(url_for("index"))
-
-    else:
-        return render_template("register.html")
-
-@app.route("/logout")
-def logout():
-    """Log user out."""
-    print "User logged out"
-    # Forget any user_id
-    session.clear()
-
-    # Redirect user to login form
-    return redirect(url_for("login"))
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    """Log user in."""
-
-    # Forget any user_id/game_id
-    session.clear()
-
-    # If user reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
-
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            flash('Must type username!', 'danger')
-            return render_template('login.html')
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            flash('Must type password!', 'danger')
-            return render_template('login.html')
-
-        # Query database for username
-        rows = datastore.get_user_by_username(engine, request.form.get("username"))
-
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            flash('Invalid username/and or password!', 'danger')
-            return render_template('register.html')
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-
-        # Start a new game
-        session["game_id"] = new_game(engine)
-        print "Created new game with id=%i" % session['game_id']
-
-        print "Logged in user %s" % (request.form.get('username'))
-        # Redirect user to game
-        return redirect(url_for("index"))
-
-    # Else if user reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("login.html")
-
-@app.route("/password", methods=["GET", "POST"])
-@login_required
-def password():
-    """Allow user to change password"""
-
-    if request.method == "POST":
-        print "Changing password"
-        # Query for user's hash of password
-        rows = datastore.get_user_by_user_id(engine, session['user_id'])
-        print("old hash", rows['hash'])
-        print("old form hash", generate_password_hash(request.form.get('old')))
-        # Check all boxes filled, old password is correct, new and confirmation match
-        if not request.form.get("old") or not check_password_hash(request.form.get("old"), rows["hash"]):
-            flash('Incorrect password!', 'danger')
-            return render_template('password.html')
-        elif not request.form.get("new") or not request.form.get("confirmation"):
-            flash('Must enter both passwords', 'danger')
-            return render_template('password.html')
-        elif not request.form.get("new") == request.form.get("confirmation"):
-            flash('Passwords don\'t match!', 'danger')
-            return render_template('password.html')
-
-        # Update hash in database
-        pw_hash = generate_password_hash(request.form.get('new'))
-        datastore.update_password_hash(engine, user_id, pw_hash)
-
-        # Redirect to portfolio
-        flash("Password changed!")
-        print "Password changed!"
-        return redirect(url_for("index"))
-
-    else:
-        return render_template("password.html")
 
 if __name__ == "__main__":
     app.run()
