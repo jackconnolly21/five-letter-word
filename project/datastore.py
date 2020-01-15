@@ -22,24 +22,6 @@ def get_db_engine(mode='prod'):
 def __insert(db_engine, table, row_dict):
     return db_engine.execute(table.insert().returning(table.c.id), **row_dict).fetchone().id
 
-# USERS
-# def insert_user(db_engine, row_dict):
-#     return __insert(db_engine, USERS, row_dict)
-#
-# def get_user_by_username(db_engine, username):
-#     stmt = USERS.select().where(USERS.c.username == username)
-#     return db_engine.execute(stmt).fetchall()
-#
-# def get_user_by_user_id(db_engine, user_id):
-#     stmt = USERS.select().where(USERS.c.id == user_id)
-#     return db_engine.execute(stmt).fetchone()
-#
-# def update_password_hash(db_engine, user_id, pw_hash):
-#     stmt = USERS.update()
-#     stmt = stmt.where(USERS.c.id == user_id)
-#     stmt = stmt.values({'hash': pw_hash})
-#     return db_engine.execute(stmt)
-
 # GAMES
 def insert_game(db_engine, row_dict):
     return __insert(db_engine, GAMES, row_dict)
